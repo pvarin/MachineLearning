@@ -2,10 +2,7 @@ import numpy as np
 import gzip, struct
 
 class Dataset(object):
-	pass
-
-class MNISTDataset(Dataset):
-	def __init__(self,dataPath,labelsPath):
+	def loadMNIST(self, dataPath, labelsPath):
 		self.dataFile = gzip.GzipFile(dataPath)
 		self.labelFile = gzip.GzipFile(labelsPath)
 		
@@ -31,9 +28,7 @@ class MNISTDataset(Dataset):
 
 		print 'Done'
 
-		# for i in xrange(10):
-		# 	self.data[i] = np.array()
-
 if __name__ == '__main__':
 	# Test the MNISTDataset class
-	a = MNISTDataset('../data/MNIST_Test_Data.gz','../data/MNIST_Test_Labels.gz')
+	a = Dataset()
+	a.loadMNIST('../data/MNIST_Test_Data.gz','../data/MNIST_Test_Labels.gz')
