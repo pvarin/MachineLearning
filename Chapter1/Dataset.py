@@ -30,7 +30,8 @@ def parseMNIST(dataPath, labelsPath):
 
 class Dataset(object):
 	def loadMNIST(self, dataPath, labelsPath):
-		self.dataFile, self.labelFile = parseMNIST(dataPath,labelsPath)
+		self.data, self.labels = parseMNIST(dataPath,labelsPath)
+		self.maxLabel = np.nanmax(self.labels)
 
 class Classifier(Dataset):
 	def loadMNIST(self, dataPath, labelsPath, test=False):
@@ -38,8 +39,24 @@ class Classifier(Dataset):
 			self.testData, self.testLabels = parseMNIST(dataPath,labelsPath)
 		else:
 			self.data, self.labels = parseMNIST(dataPath,labelsPath)
+			self.maxLabel = np.nanmax(self.labels)
+	
+	def classifyRate(self,*args, **kwargs):
+		labels = self.classify(self.testData, *args, **kwargs)
+		print labels
+		print self.testLabels
+		numCorrect = sum(labels == self.testLabels)
+		return float(numCorrect)/len(labels)
+
+	def classify(self,data):
+		raise NotImplementedError
 
 if __name__ == '__main__':
-	# Test the MNISTDataset class
+	# Test the Dataset class
 	a = Dataset()
-	a.loadMNIST('../data/MNIST_Test_Data.gz','../data/MNIST_Test_Labels.gz')
+	a.loadMNIST('../data/MNIST_Training_Data.gz','../data/MNIST_Training_Labels.gz')
+
+	# Test the Classifier class
+	a = Classifier()
+	a.loadMNIST('../data/MNIST_Training_Data.gz','../data/MNIST_Training_Labels.gz')
+	a.loadMNIST('../data/MNIST_Test_Data.gz','../data/MNIST_Test_Labels.gz', test=True)
