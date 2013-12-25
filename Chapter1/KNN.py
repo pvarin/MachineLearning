@@ -9,7 +9,6 @@ class KNNDataset(Dataset.Classifier):
 		labels = np.zeros(len(data))
 
 		for i,d in enumerate(data):
-			# if i%1000 == 0:
 			print "%s of %s" % (i, len(data))
 			# allocate space for label counts and calculate distance
 			lCount = np.zeros(self.maxLabel+1)
@@ -20,21 +19,9 @@ class KNNDataset(Dataset.Classifier):
 				idx = np.argmin(distance)
 				distance[idx] = np.inf
 				lCount[self.labels[idx]] += 1
-
 			labels[i] = np.argmax(lCount)
-		return labels
-
-		distance = dist.cdist(data,self.data)
-
-		for i in labels:
-			l = np.zeros(np.maximum(self.labels))
-			np.argmax((distance[1,:]))
 		
-		# for i in len(data):
-		# 	labels[i]
-		# 	print distance[i,:]
 		return labels
-
 
 
 
