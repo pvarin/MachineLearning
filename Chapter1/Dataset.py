@@ -15,7 +15,7 @@ def parseMNIST(dataPath, labelsPath):
 	# print useful output
 	print "Loading %s images, each %s by %s" % (numImgs,width,height)
 
-	# # allocate memory 
+	# allocate memory 
 	labels = np.zeros(numImgs)
 	data = np.zeros((numImgs, width*height))
 
