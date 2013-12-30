@@ -2,64 +2,81 @@ import sys
 sys.path.append('..')
 import Dataset
 import numpy as np
-import scipy.spatial.distance as dist
+from scipy import spatial
 
 class KNNDataset(Dataset.Classifier):
-	def classify(self, data, k=1, verbose=True):
-		labels = np.zeros(len(data))
 
-		for i,d in enumerate(data):
-			if verbose:
-				print "%s of %s" % (i, len(data))
-			# allocate space for label counts and calculate distance
-			lCount = np.zeros(self.maxLabel+1)
-			distance = dist.cdist(self.data,np.array([d]))
+	def load(self, *args, **kwargs):
+		super(KNNDataset,self).load(*args,**kwargs)
 
-			# find the labels of the k nearest 
-			for j in xrange(k):
-				idx = np.nanargmin(distance)
-				distance[idx] = np.inf
-				lCount[self.labels[idx]] += 1
-			labels[i] = np.argmax(lCount)
-		
-		return labels
+		if not kwargs.get('test',False):
+			print 'Constructing K-D Tree'
+			self.tree = spatial.cKDTree(self.data)
+
+	def classify(self, data, k=1):
+		# Allocate memory
+		classifiedLabels = np.zeros(len(data))
+
+		# Find Nearest-Neighbors
+		_, idx = self.tree.query(data,k=k)
+		labels = self.labels[idx]
+
+		if k is 1:
+			return labels
+		else:
+			return numpy.amax(labels,axis=1)
 
 class CNNDataset(KNNDataset):
-	def loadMNIST(self, dataPath, labelsPath, test=False, verbose=True):
+	def load(self, dataPath, labelsPath, test=False, verbose=True):
 		# load data as previously
-		super(CNNDataset,self).loadMNIST(dataPath,labelsPath,test=test)
+		super(CNNDataset,self).load(dataPath,labelsPath,test=test)
 		
 		# don't compress the test data
 		if test:
 			return
 
-		# compress the training data
-		if verbose:
-			print "Filtering data for CNN"
-			
-		for i in xrange(len(self.data)):
-			if verbose:
-				print "%s of %s" % (i+1, len(self.data))
-			temp = self.data[i].copy()
-			self.data[i] = np.nan
-			if self.classify(temp[:,np.newaxis].T,verbose=False) != self.labels[i]:
-				self.data[i] = temp
+		# create the compressed search data
+		remIdx = [0]
+		it = 0
+		self.tree = spatial.cKDTree(self.data[remIdx])
+		changed = True
+		"Iteratively updating the search tree"
+		while len(remIdx) > 0:
+			# print iteration number
+			print "Iteration %s" % it
+			it +=1
 
-		keepIdx = np.isfinite(self.data)
-		self.data = self.data[keepIdx]
-		self.labels = self.labels[keepIdx]
-
-
+			# add data to the search tree
+			changed = False
+			for i,d in enumerate(self.data):
+				if i in remIdx:
+					continue
+				temp = self.classify(d)
+				print i, len(remIdx)
+				if temp != self.labels[i]:
+					remIdx.append(i)
+					if len(remIdx) % 10 == 0:
+						self.tree = spatial.cKDTree(self.data[remIdx])
+					changed = True
 
 if __name__=='__main__':
-	# # Test KNN
+	# Test KNN
 	# k = KNNDataset()
-	# k.loadMNIST('../data/MNIST_Training_Data.gz','../data/MNIST_Training_Labels.gz')
-	# k.loadMNIST('../data/MNIST_Test_Data.gz','../data/MNIST_Test_Labels.gz', test=True)
+	# print 'Loading Training Data'
+	# k.load('../data/MNIST_Training_Data.npy','../data/MNIST_Training_Labels.npy')
+	# print 'Loading Test Data'
+	# k.load('../data/MNIST_Test_Data.npy','../data/MNIST_Test_Labels.npy', test=True)
+	# print 'Classifying Data'
 	# print k.classifyRate()
 
-	# Test CNN
+	# # Test CNN
 	k = CNNDataset()
-	k.loadMNIST('../data/MNIST_Training_Data.gz','../data/MNIST_Training_Labels.gz')
-	k.loadMNIST('../data/MNIST_Test_Data.gz','../data/MNIST_Test_Labels.gz', test=True)
+	print 'Loading Training Data'
+	k.load('../data/MNIST_Training_Data.npy','../data/MNIST_Training_Labels.npy')
+	print 'Loading Test Data'
+	k.load('../data/MNIST_Test_Data.npy','../data/MNIST_Test_Labels.npy', test=True)
+	print 'Classifying Data'
 	print k.classifyRate()
+	# k.load('../data/MNIST_Training_Data.npy','../data/MNIST_Training_Labels.npy', test=True)
+	# k.load('../data/MNIST_Test_Data.npy','../data/MNIST_Test_Labels.npy', test=False)
+	# print k.classifyRate(verbose=False)
